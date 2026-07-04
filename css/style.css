@@ -1,0 +1,688 @@
+/* ==============================================
+   MARKDOWN PREVIEWER — style.css
+   Structure:
+     1. Reset & CSS variables
+     2. Global layout (#app)
+     3. Toolbar
+     4. Language toggle
+     5. Panes (editor + preview)
+     6. Preview typography (rendered Markdown)
+     7. Status bar
+     8. Draggable resizer
+     9. View modes
+     10. Dark theme (prefers-color-scheme)
+     11. Responsive (breakpoint <= 640px)
+   ============================================== */
+
+
+/* -----------------------------------------------
+   1. RESET & CSS VARIABLES
+   ----------------------------------------------- */
+
+/* Minimal reset: box-sizing, margins and padding */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  /* Color palette — light theme */
+  --color-bg-page:        #f5f4f0;   /* page background */
+  --color-bg-surface:     #ffffff;   /* surfaces (editor, preview) */
+  --color-bg-toolbar:     #fafaf8;   /* toolbar and pane header */
+  --color-bg-hover:       #f0eeea;   /* button hover */
+  --color-bg-code:        #f5f4f0;   /* code block background */
+
+  --color-text-primary:   #1a1a18;   /* main text */
+  --color-text-secondary: #6b6b65;   /* secondary text (labels, hints) */
+  --color-text-muted:     #9e9d97;   /* very muted text */
+  --color-text-link:      #185fa5;   /* links and info accent */
+
+  --color-border-subtle:  rgba(0, 0, 0, 0.10); /* light borders */
+  --color-border-medium:  rgba(0, 0, 0, 0.20); /* medium borders */
+
+  --color-accent:         #534ab7;   /* purple accent (active button, focus) */
+  --color-accent-light:   #eeedfe;   /* active button background */
+
+  /* Typography */
+  --font-sans:   system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+  --font-mono:   "JetBrains Mono", "Fira Code", "Cascadia Code", "Menlo", monospace;
+
+  /* Spacing and corners */
+  --radius-sm:   4px;
+  --radius-md:   8px;
+  --radius-lg:   12px;
+
+  /* Fixed heights */
+  --toolbar-h:   46px;
+  --statusbar-h: 30px;
+}
+
+
+/* -----------------------------------------------
+   2. GLOBAL LAYOUT
+   ----------------------------------------------- */
+
+/* html and body fill the entire window without outer scroll */
+html, body {
+  height: 100%;
+  overflow: hidden;
+  font-family: var(--font-sans);
+  background: var(--color-bg-page);
+  color: var(--color-text-primary);
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* #app: vertical flex container filling the whole window */
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100%;
+  overflow: hidden;
+}
+
+
+/* -----------------------------------------------
+   3. TOOLBAR
+   ----------------------------------------------- */
+
+#toolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 12px;
+  height: var(--toolbar-h);
+  background: var(--color-bg-toolbar);
+  border-bottom: 1px solid var(--color-border-subtle);
+  flex-shrink: 0;      /* never shrinks */
+  flex-wrap: wrap;     /* wraps on narrow screens */
+  overflow: hidden;
+  position: relative;
+  z-index: 10;
+}
+
+/* Brand / logo */
+.toolbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  flex-shrink: 0;
+  margin-right: 4px;
+}
+
+.toolbar-brand i {
+  font-size: 18px;
+  color: var(--color-accent);
+}
+
+/* Vertical separator between groups */
+.toolbar-separator {
+  width: 1px;
+  height: 20px;
+  background: var(--color-border-subtle);
+  margin: 0 4px;
+  flex-shrink: 0;
+}
+
+/* Button groups */
+.toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+/* Generic toolbar button */
+.tb-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font-size: 16px;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+
+.tb-btn:hover {
+  background: var(--color-bg-hover);
+  border-color: var(--color-border-subtle);
+  color: var(--color-text-primary);
+}
+
+.tb-btn:active {
+  transform: scale(0.95);
+}
+
+/* Visible focus for keyboard accessibility */
+.tb-btn:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* View switch (Split / Editor / Preview) — pushed to the right */
+#view-toggle {
+  margin-left: auto;
+  display: flex;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.view-btn {
+  padding: 4px 10px;
+  border: 1px solid var(--color-border-medium);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+
+.view-btn:hover {
+  background: var(--color-bg-hover);
+  color: var(--color-text-primary);
+}
+
+/* Active view button */
+.view-btn.active {
+  background: var(--color-accent-light);
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.view-btn:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+
+/* -----------------------------------------------
+   4. LANGUAGE TOGGLE
+   ----------------------------------------------- */
+
+#lang-toggle {
+  display: flex;
+  gap: 3px;
+  flex-shrink: 0;
+  margin-left: 8px;
+}
+
+.lang-btn {
+  padding: 4px 8px;
+  border: 1px solid var(--color-border-medium);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+
+.lang-btn:hover {
+  background: var(--color-bg-hover);
+  color: var(--color-text-primary);
+}
+
+/* Currently active language */
+.lang-btn.active {
+  background: var(--color-accent-light);
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.lang-btn:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+
+/* -----------------------------------------------
+   5. PANES (main work area)
+   ----------------------------------------------- */
+
+/* Horizontal flex container filling remaining space */
+#panes {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Generic pane */
+.pane {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  flex: 1;         /* 50% each in split mode */
+  min-width: 0;    /* prevents overflow on flex children */
+}
+
+/* Pane header */
+.pane-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  background: var(--color-bg-toolbar);
+  border-bottom: 1px solid var(--color-border-subtle);
+  flex-shrink: 0;
+}
+
+.pane-header i {
+  font-size: 14px;
+}
+
+/* Right border on the editor pane in split mode */
+#editor-pane {
+  border-right: 1px solid var(--color-border-subtle);
+}
+
+/* --- Editor textarea --- */
+#editor {
+  flex: 1;
+  width: 100%;
+  padding: 18px 20px;
+  border: none;
+  outline: none;
+  resize: none;
+  background: var(--color-bg-surface);
+  color: var(--color-text-primary);
+  font-family: var(--font-mono);
+  font-size: 13.5px;
+  line-height: 1.75;
+  tab-size: 2;
+  overflow-y: auto;
+  overflow-x: auto;    /* horizontal scroll for long lines */
+  white-space: pre;    /* preserves indentation */
+}
+
+/* Hides the scrollbar in the editor while keeping functionality */
+#editor::-webkit-scrollbar { width: 6px; height: 6px; }
+#editor::-webkit-scrollbar-thumb { background: var(--color-border-medium); border-radius: 3px; }
+
+/* --- Preview pane --- */
+#preview {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 28px;
+  background: var(--color-bg-surface);
+}
+
+#preview::-webkit-scrollbar { width: 6px; }
+#preview::-webkit-scrollbar-thumb { background: var(--color-border-medium); border-radius: 3px; }
+
+
+/* -----------------------------------------------
+   6. MARKDOWN PREVIEW TYPOGRAPHY
+   ----------------------------------------------- */
+
+/* Paragraphs */
+#preview p {
+  margin-bottom: 0.85em;
+}
+
+/* Headings with bottom border for h1 and h2 */
+#preview h1, #preview h2, #preview h3,
+#preview h4, #preview h5, #preview h6 {
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--color-text-primary);
+}
+
+#preview h1 {
+  font-size: 1.75em;
+  margin: 0.6em 0 0.5em;
+  padding-bottom: 0.3em;
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+#preview h2 {
+  font-size: 1.35em;
+  margin: 1.2em 0 0.5em;
+  padding-bottom: 0.25em;
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+#preview h3 { font-size: 1.15em; margin: 1em 0 0.4em; }
+#preview h4 { font-size: 1em;    margin: 0.8em 0 0.3em; }
+#preview h5 { font-size: 0.9em;  margin: 0.7em 0 0.3em; }
+#preview h6 { font-size: 0.85em; margin: 0.6em 0 0.3em; color: var(--color-text-secondary); }
+
+/* Links */
+#preview a {
+  color: var(--color-text-link);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+#preview a:hover {
+  opacity: 0.8;
+}
+
+/* Lists */
+#preview ul, #preview ol {
+  margin: 0 0 0.85em 1.5em;
+}
+
+#preview li {
+  margin-bottom: 0.25em;
+}
+
+/* Nested lists */
+#preview li > ul, #preview li > ol {
+  margin-top: 0.2em;
+  margin-bottom: 0;
+}
+
+/* Blockquotes */
+#preview blockquote {
+  margin: 0 0 0.85em;
+  padding: 8px 16px;
+  border-left: 3px solid var(--color-accent);
+  background: var(--color-accent-light);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  color: var(--color-text-secondary);
+  font-style: italic;
+}
+
+#preview blockquote p:last-child {
+  margin-bottom: 0;
+}
+
+/* Inline code */
+#preview code {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  padding: 2px 6px;
+  background: var(--color-bg-code);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-primary);
+}
+
+/* Code block (pre + code) */
+#preview pre {
+  margin: 0 0 0.85em;
+  padding: 14px 16px;
+  background: var(--color-bg-code);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+  overflow-x: auto;
+}
+
+/* Reset code inside pre (already styled by pre) */
+#preview pre code {
+  padding: 0;
+  background: none;
+  border: none;
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--color-text-primary);
+}
+
+/* Tables */
+#preview table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 0.85em;
+  font-size: 14px;
+}
+
+#preview thead th {
+  background: var(--color-bg-code);
+  font-weight: 600;
+  text-align: left;
+}
+
+#preview th, #preview td {
+  padding: 7px 12px;
+  border: 1px solid var(--color-border-subtle);
+}
+
+#preview tbody tr:nth-child(even) {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+/* Images */
+#preview img {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius-md);
+  display: block;
+  margin: 0.5em 0;
+}
+
+/* Horizontal rule */
+#preview hr {
+  border: none;
+  border-top: 1px solid var(--color-border-subtle);
+  margin: 1.5em 0;
+}
+
+/* Bold and italic */
+#preview strong { font-weight: 700; }
+#preview em     { font-style: italic; }
+
+/* Strikethrough */
+#preview del    { text-decoration: line-through; color: var(--color-text-secondary); }
+
+
+/* -----------------------------------------------
+   7. STATUS BAR
+   ----------------------------------------------- */
+
+#statusbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 14px;
+  height: var(--statusbar-h);
+  background: var(--color-bg-toolbar);
+  border-top: 1px solid var(--color-border-subtle);
+  flex-shrink: 0;
+  font-size: 11.5px;
+  color: var(--color-text-muted);
+}
+
+/* Dot separator between stats */
+.stat-sep {
+  color: var(--color-border-medium);
+}
+
+/* Copy notification toast (fades in and out) */
+#copy-toast {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-accent);
+  opacity: 0;
+  transition: opacity 0.25s;
+  pointer-events: none;
+}
+
+#copy-toast.visible {
+  opacity: 1;
+}
+
+
+/* -----------------------------------------------
+   8. DRAGGABLE RESIZER
+   ----------------------------------------------- */
+
+#resizer {
+  width: 5px;
+  cursor: col-resize;
+  background: transparent;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 5;
+  transition: background 0.15s;
+}
+
+/* Center line visible on hover */
+#resizer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 2px;
+  width: 1px;
+  height: 100%;
+  background: var(--color-border-subtle);
+  transition: background 0.15s, width 0.15s, left 0.15s;
+}
+
+#resizer:hover::after,
+#resizer.dragging::after {
+  left: 1px;
+  width: 3px;
+  background: var(--color-accent);
+}
+
+
+/* -----------------------------------------------
+   9. VIEW MODES
+   Classes are applied to #panes from JS
+   ----------------------------------------------- */
+
+/* Split: both panes visible */
+#panes.view-split #editor-pane  { display: flex; }
+#panes.view-split #preview-pane { display: flex; }
+#panes.view-split #resizer       { display: block; }
+
+/* Editor only */
+#panes.view-editor #editor-pane  { display: flex; flex: 1; }
+#panes.view-editor #preview-pane { display: none; }
+#panes.view-editor #resizer       { display: none; }
+#panes.view-editor #editor-pane  { border-right: none; }
+
+/* Preview only */
+#panes.view-preview #editor-pane  { display: none; }
+#panes.view-preview #preview-pane { display: flex; }
+#panes.view-preview #resizer       { display: none; }
+
+
+/* -----------------------------------------------
+   10. DARK THEME (automatic via OS preference)
+   ----------------------------------------------- */
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg-page:        #1a1a18;
+    --color-bg-surface:     #212120;
+    --color-bg-toolbar:     #252523;
+    --color-bg-hover:       #2e2e2c;
+    --color-bg-code:        #2a2a28;
+
+    --color-text-primary:   #e8e7e1;
+    --color-text-secondary: #9e9d97;
+    --color-text-muted:     #6b6b65;
+    --color-text-link:      #85b7eb;
+
+    --color-border-subtle:  rgba(255, 255, 255, 0.08);
+    --color-border-medium:  rgba(255, 255, 255, 0.15);
+
+    --color-accent:         #afa9ec;
+    --color-accent-light:   #26215c;
+  }
+
+  /* Scrollbar in dark mode */
+  #editor::-webkit-scrollbar-thumb,
+  #preview::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+  }
+
+  /* Even table rows more visible in dark mode */
+  #preview tbody tr:nth-child(even) {
+    background: rgba(255, 255, 255, 0.03);
+  }
+}
+
+
+/* -----------------------------------------------
+   11. RESPONSIVE — breakpoint <= 640px (mobile)
+   ----------------------------------------------- */
+
+@media (max-width: 640px) {
+
+  /* Toolbar: reduced height, groups wrap */
+  #toolbar {
+    height: auto;
+    padding: 6px 8px;
+    gap: 3px;
+  }
+
+  /* Hides the brand name (keeps only the icon) */
+  .toolbar-brand span {
+    display: none;
+  }
+
+  /* Language + view toggles share a full-width row on mobile,
+     wrapping below the formatting buttons */
+  #lang-toggle,
+  #view-toggle {
+    padding-top: 4px;
+  }
+
+  #lang-toggle {
+    margin-left: 0;
+  }
+
+  #view-toggle {
+    margin-left: auto;
+  }
+
+  /* In mobile panes stack vertically */
+  #panes {
+    flex-direction: column;
+  }
+
+  /* Removes right border in column layout */
+  #editor-pane {
+    border-right: none;
+    border-bottom: 1px solid var(--color-border-subtle);
+  }
+
+  /* Resizer doesn't make sense vertically: hidden */
+  #resizer {
+    display: none !important;
+  }
+
+  /* In vertical split each pane takes half the screen */
+  #panes.view-split .pane {
+    flex: 1;
+    min-height: 180px;
+  }
+
+  /* In editor-only and preview-only, the active pane expands */
+  #panes.view-editor  #editor-pane,
+  #panes.view-preview #preview-pane {
+    flex: 1;
+  }
+
+  /* Reduces inner padding on mobile */
+  #editor  { padding: 12px 14px; font-size: 13px; }
+  #preview { padding: 14px 16px; }
+
+  /* More compact status bar */
+  #statusbar { font-size: 10.5px; gap: 4px; padding: 0 10px; }
+}

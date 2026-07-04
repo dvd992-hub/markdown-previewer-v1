@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <!-- Responsive viewport: adapts the layout to all devices -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="A live Markdown editor with real-time preview." />
+  <title>Markdown Previewer</title>
+
+  <!-- Favicon: SVG preferred by modern browsers, ICO as fallback for older ones -->
+  <link rel="icon" type="image/svg+xml" href="assets/favicon/favicon.svg" />
+  <link rel="icon" type="image/x-icon" href="assets/favicon/favicon.ico" />
+  <link rel="alternate icon" href="assets/favicon/favicon.ico" />
+
+  <!-- marked.js library for Markdown → HTML parsing -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+
+  <!-- Tabler outline icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css" />
+
+  <!-- Main stylesheet -->
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- =============================================
+       APPLICATION ROOT
+       ============================================= -->
+  <div id="app">
+
+    <!-- -------------------------------------------
+         TOOLBAR: top action bar
+         ------------------------------------------- -->
+    <header id="toolbar" role="banner">
+
+      <!-- App logo / brand -->
+      <div class="toolbar-brand">
+        <i class="ti ti-markdown" aria-hidden="true"></i>
+        <span data-i18n="appName">Markdown Previewer</span>
+      </div>
+
+      <div class="toolbar-separator"></div>
+
+      <!-- Group: inline formatting (bold, italic, strikethrough, code) -->
+      <div class="toolbar-group" role="group" data-i18n-aria="groupFormatting" aria-label="Text formatting">
+        <button class="tb-btn" onclick="ToolbarActions.inlineWrap('**', '**')" data-i18n-title="bold" data-i18n-aria="bold" title="Bold" aria-label="Bold">
+          <i class="ti ti-bold" aria-hidden="true"></i>
+        </button>
+        <button class="tb-btn" onclick="ToolbarActions.inlineWrap('*', '*')" data-i18n-title="italic" data-i18n-aria="italic" title="Italic" aria-label="Italic">
+          <i class="ti ti-italic" aria-hidden="true"></i>
+        </button>
+        <button class="tb-btn" onclick="ToolbarActions.inlineWrap('~~', '~~')" data-i18n-title="strikethrough" data-i18n-aria="strikethrough" title="Strikethrough" aria-label="Strikethrough">
+          <i class="ti ti-strikethrough" aria-hidden="true"></i>
+        </button>
+        <button class="tb-btn" onclick="ToolbarActions.inlineWrap('\`', '\`')" data-i18n-title="inlineCode" data-i18n-aria="inlineCode" title="Inline code" aria-label="Inline code">
+          <i class="ti ti-code" aria-hidden="true"></i>
+        </button>
+      </div>
+
+      <div class="toolbar-separator"></div>
+
+      <!-- Group: block elements (heading, list, quote, code block, link) -->
+      <div class="toolbar-group" role="group" data-i18n-aria="groupBlocks" aria-label="Block elements">
+        <button class="tb-btn" onclick="ToolbarActions.insertHeading()" data-i18n-title="heading" data-i18n-aria="heading" title="Heading" aria-label="Heading">
+          <i class="ti ti-heading" aria-hidden="true"></i>
+        </button>
+        <button class="tb-btn" onclick="ToolbarActions.insertLinePrefix('- ')" data-i18n-title="bulletList" data-i18n-aria="bulletList" title="Bullet list" aria-label="Bullet list">
+          <i class="ti ti-list" aria-hidden="true"></i>
+        </button>
+        <button class="tb-btn" onclick="ToolbarActions.insertLinePrefix('> ')" data-i18n-title="quote" data-i18n-aria="quote" title="Quote" aria-label="Quote">
+          <i class="ti ti-quote" aria-hidden="true"></i>
+        </button>
+        <button class="tb-btn" onclick="ToolbarActions.insertCodeBlock()" data-i18n-title="codeBlock" data-i18n-aria="codeBlock" title="Code block" aria-label="Code block">
+          <i class="ti ti-terminal" aria-hidden="true"></i>
+        </button>
+        <button class="tb-btn" onclick="ToolbarActions.insertLink()" data-i18n-title="link" data-i18n-aria="link" title="Insert link" aria-label="Insert link">
+          <i class="ti ti-link" aria-hidden="true"></i>
+        </button>
+        <button class="tb-btn" onclick="ToolbarActions.insertHR()" data-i18n-title="horizontalRule" data-i18n-aria="horizontalRule" title="Horizontal rule" aria-label="Horizontal rule">
+          <i class="ti ti-minus" aria-hidden="true"></i>
+        </button>
+      </div>
+
+      <div class="toolbar-separator"></div>
+
+      <!-- Group: utility actions (copy, clear, download) -->
+      <div class="toolbar-group" role="group" data-i18n-aria="groupActions" aria-label="Actions">
+        <button class="tb-btn" id="btn-copy" onclick="EditorActions.copyMarkdown()" data-i18n-title="copyMarkdown" data-i18n-aria="copyMarkdown" title="Copy markdown" aria-label="Copy markdown">
+          <i class="ti ti-copy" aria-hidden="true"></i>
+        </button>
+        <button class="tb-btn" onclick="EditorActions.clearEditor()" data-i18n-title="clearEditor" data-i18n-aria="clearEditor" title="Clear editor" aria-label="Clear editor">
+          <i class="ti ti-trash" aria-hidden="true"></i>
+        </button>
+        <button class="tb-btn" onclick="EditorActions.downloadMarkdown()" data-i18n-title="downloadMarkdown" data-i18n-aria="downloadMarkdown" title="Download .md file" aria-label="Download .md file">
+          <i class="ti ti-download" aria-hidden="true"></i>
+        </button>
+      </div>
+
+      <!-- Language toggle (pushed right, before view toggle) -->
+      <div id="lang-toggle" role="group" data-i18n-aria="groupLanguage" aria-label="Language">
+        <button class="lang-btn" id="btn-lang-en" data-lang="en" onclick="I18n.setLanguage('en')">EN</button>
+        <button class="lang-btn" id="btn-lang-it" data-lang="it" onclick="I18n.setLanguage('it')">IT</button>
+      </div>
+
+      <!-- View mode switch (pushed to the far right via margin-left: auto) -->
+      <div id="view-toggle" role="group" data-i18n-aria="groupViewToggle" aria-label="View mode">
+        <button class="view-btn active" id="btn-split"   onclick="ViewManager.set('split')"   data-i18n="viewSplit">Split</button>
+        <button class="view-btn"        id="btn-editor"  onclick="ViewManager.set('editor')"  data-i18n="viewEditor">Editor</button>
+        <button class="view-btn"        id="btn-preview" onclick="ViewManager.set('preview')" data-i18n="viewPreview">Preview</button>
+      </div>
+    </header>
+
+    <!-- -------------------------------------------
+         MAIN AREA: editor + preview
+         ------------------------------------------- -->
+    <main id="panes" class="view-split" aria-label="Workspace">
+
+      <!-- Left pane: editor textarea -->
+      <section class="pane" id="editor-pane" aria-label="Markdown editor">
+        <div class="pane-header">
+          <i class="ti ti-pencil" aria-hidden="true"></i>
+          <span data-i18n="paneMarkdown">Markdown</span>
+        </div>
+        <textarea
+          id="editor"
+          spellcheck="false"
+          autocomplete="off"
+          autocorrect="off"
+          autocapitalize="off"
+          data-i18n-aria="editorAriaLabel"
+          aria-label="Write markdown here"
+          aria-multiline="true"
+        ></textarea>
+      </section>
+
+      <!-- Draggable divider (visible only in split mode on desktop) -->
+      <div id="resizer" aria-hidden="true" title="Drag to resize"></div>
+
+      <!-- Right pane: rendered preview -->
+      <section class="pane" id="preview-pane" aria-label="HTML preview">
+        <div class="pane-header">
+          <i class="ti ti-eye" aria-hidden="true"></i>
+          <span data-i18n="panePreview">Preview</span>
+        </div>
+        <!-- aria-live="polite" announces updates to screen readers without interrupting -->
+        <div id="preview" aria-live="polite" data-i18n-aria="previewAriaLabel" aria-label="Rendered preview"></div>
+      </section>
+    </main>
+
+    <!-- -------------------------------------------
+         STATUS BAR: document statistics
+         ------------------------------------------- -->
+    <footer id="statusbar" role="contentinfo" aria-label="Document statistics">
+      <span id="stat-words">0 words</span>
+      <span class="stat-sep">·</span>
+      <span id="stat-chars">0 characters</span>
+      <span class="stat-sep">·</span>
+      <span id="stat-lines">0 lines</span>
+      <span class="stat-sep">·</span>
+      <span id="stat-read">0 min read</span>
+      <!-- Copy notification toast (hidden by default, shown via JS) -->
+      <span id="copy-toast" aria-live="assertive"></span>
+    </footer>
+
+  </div><!-- /#app -->
+
+  <!-- ===========================================
+       SCRIPTS — load order matters:
+       1. i18n dictionaries (en, it)
+       2. i18n manager
+       3. app logic (depends on the above)
+       =========================================== -->
+  <script src="i18n/en.js"></script>
+  <script src="i18n/it.js"></script>
+  <script src="js/i18n-manager.js"></script>
+  <script src="js/script.js"></script>
+</body>
+</html>
